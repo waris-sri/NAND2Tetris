@@ -77,12 +77,12 @@ CHIP ALU {
     // no
     Not16(in=o7, out=noto7);
     // [15] = left-most (+/- sign), [0..7]/[8..15] = to halve 16-bit into 2 Or8Ways
-    Mux16(a=o7, b=noto7, sel=no, out=out, out[15]=neg, out[0..7]=firstHalf, out[8..15]=laterHalf);
+    Mux16(a=o7, b=noto7, sel=no, out[0..7]=firstHalf, out[8..15]=laterHalf, out=out);
     // zr
     Or8Way(in=firstHalf, out=o8);
     Or8Way(in=laterHalf, out=o9);
     Or(a=o8, b=o9, out=o10); // if (out == 0) equals 1
     Not(in=o10, out=o11); // else equals 0
     // ng
-    And(a=neg, b=true, out=ng);
+    And(a=o11, b=true, out=ng);
 }
