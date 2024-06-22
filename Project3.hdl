@@ -27,3 +27,187 @@ CHIP Register {
     Bit(in= in[14], load= load, out= out[14]);
     Bit(in= in[15], load= load, out= out[15]);
 }
+
+CHIP RAM8 {
+    IN in[16], load, address[3]; // `address` now used as selectors, calculated by log_2(n)
+    OUT out[16];
+    PARTS:
+    // All 3 addresses are used within the same level for each register
+    DMux8Way(in=load, sel=address,
+        a=l1,
+        b=l2,
+        c=l3,
+        d=l4,
+        e=l5,
+        f=l6, 
+        g=l7, 
+        h=l8);
+    Register(in=in, load=l1, out=o1);
+    Register(in=in, load=l2, out=o2);
+    Register(in=in, load=l3, out=o3);
+    Register(in=in, load=l4, out=o4);
+    Register(in=in, load=l5, out=o5);
+    Register(in=in, load=l6, out=o6);
+    Register(in=in, load=l7, out=o7);
+    Register(in=in, load=l8, out=o8);
+    Mux8Way16(
+        a=o1,
+        b=o2,
+        c=o3,
+        d=o4,
+        e=o5,
+        f=o6,
+        g=o7,
+        h=o8,
+        sel=address, out=out);
+}
+
+CHIP RAM64 {
+    IN in[16], load, address[6];
+    OUT out[16];
+    PARTS:
+    // - First 3 least significant addresses ([0..2]) are used within the lower level
+    //   for selecting each register in each RAM8
+    // - The remaining 3 least significant addresses ([3..5]) are used within the higher level
+    //   for selecting each RAM8
+    // - This pattern can be found in multilayered devices:
+    //   "The lower level devices are selected by least significant bits
+    //   while the higher level devices use the remaining most significant bits for the selection."
+    DMux8Way(in=load, sel=address[3..5],
+        a=l1,
+        b=l2,
+        c=l3,
+        d=l4,
+        e=l5,
+        f=l6, 
+        g=l7, 
+        h=l8);
+    // 8*8 = 64
+    RAM8(in=in, load=l1, address=address[0..2], out=o1);
+    RAM8(in=in, load=l2, address=address[0..2], out=o2);
+    RAM8(in=in, load=l3, address=address[0..2], out=o3);
+    RAM8(in=in, load=l4, address=address[0..2], out=o4);
+    RAM8(in=in, load=l5, address=address[0..2], out=o5);
+    RAM8(in=in, load=l6, address=address[0..2], out=o6);
+    RAM8(in=in, load=l7, address=address[0..2], out=o7);
+    RAM8(in=in, load=l8, address=address[0..2], out=o8);
+    Mux8Way16(
+        a=o1,
+        b=o2,
+        c=o3,
+        d=o4,
+        e=o5,
+        f=o6,
+        g=o7,
+        h=o8,
+        sel=address[3..5], out=out);
+}
+
+CHIP RAM512 {
+    IN in[16], load, address[9];
+    OUT out[16];
+    PARTS:
+    DMux8Way(in=load, sel=address[6..8],
+        a=l1,
+        b=l2,
+        c=l3,
+        d=l4,
+        e=l5,
+        f=l6, 
+        g=l7, 
+        h=l8);
+    // 64*8 = 512
+    RAM64(in=in, load=l1, address=address[0..5], out=o1);
+    RAM64(in=in, load=l2, address=address[0..5], out=o2);
+    RAM64(in=in, load=l3, address=address[0..5], out=o3);
+    RAM64(in=in, load=l4, address=address[0..5], out=o4);
+    RAM64(in=in, load=l5, address=address[0..5], out=o5);
+    RAM64(in=in, load=l6, address=address[0..5], out=o6);
+    RAM64(in=in, load=l7, address=address[0..5], out=o7);
+    RAM64(in=in, load=l8, address=address[0..5], out=o8);
+    Mux8Way16(
+        a=o1,
+        b=o2,
+        c=o3,
+        d=o4,
+        e=o5,
+        f=o6,
+        g=o7,
+        h=o8,
+        sel=address[6..8], out=out);
+}
+
+CHIP RAM4K {
+    IN in[16], load, address[12];
+    OUT out[16];
+    PARTS:
+    DMux8Way(in=load, sel=address[9..11],
+        a=l1,
+        b=l2,
+        c=l3,
+        d=l4,
+        e=l5,
+        f=l6, 
+        g=l7, 
+        h=l8);
+    // 512*8 = 4096
+    RAM512(in=in, load=l1, address=address[0..8], out=o1);
+    RAM512(in=in, load=l2, address=address[0..8], out=o2);
+    RAM512(in=in, load=l3, address=address[0..8], out=o3);
+    RAM512(in=in, load=l4, address=address[0..8], out=o4);
+    RAM512(in=in, load=l5, address=address[0..8], out=o5);
+    RAM512(in=in, load=l6, address=address[0..8], out=o6);
+    RAM512(in=in, load=l7, address=address[0..8], out=o7);
+    RAM512(in=in, load=l8, address=address[0..8], out=o8);
+    Mux8Way16(
+        a=o1,
+        b=o2,
+        c=o3,
+        d=o4,
+        e=o5,
+        f=o6,
+        g=o7,
+        h=o8,
+        sel=address[9..11], out=out);
+}
+
+CHIP RAM16K {
+    IN in[16], load, address[14];
+    OUT out[16];
+    PARTS:
+    DMux4Way(in=load, sel=address[12..13],
+        a=l1,
+        b=l2,
+        c=l3,
+        d=l4);
+    // 4096*4 = 16384
+    RAM4K(in=in, load=l1, address=address[0..11], out=o1);
+    RAM4K(in=in, load=l2, address=address[0..11], out=o2);
+    RAM4K(in=in, load=l3, address=address[0..11], out=o3);
+    RAM4K(in=in, load=l4, address=address[0..11], out=o4);
+    Mux4Way16(a=o1,
+        b=o2,
+        c=o3,
+        d=o4,
+        sel=address[12..13], out=out);
+}
+
+CHIP PC {
+    IN in[16], reset, load, inc;
+    OUT out[16];
+    PARTS:
+    Register(in= outMux, load= true, out=out, out= oReg);
+    Inc16(in= oReg, out= oInc);
+    Mux8Way16(a= oReg,
+        b= oInc,
+        c= in,
+        d= in,
+        e= false,
+        f= false,
+        g= false,
+        h= false,
+        sel[0]= inc,
+        sel[1]= load,
+        sel[2]= reset,
+        out= outMux);
+}
